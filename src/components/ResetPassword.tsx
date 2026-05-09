@@ -41,7 +41,7 @@ export function ResetPassword({ onDone }: Props) {
       background: 'var(--bg)', padding: 24,
     }}>
       <form onSubmit={onSubmit} className="login-form" style={{
-        width: 420, maxWidth: '100%',
+        width: '100%', maxWidth: 420,
         background: 'var(--bg-card)', border: '1px solid var(--border)',
         borderRadius: 12, padding: 28,
         boxShadow: 'var(--shadow-lg)',

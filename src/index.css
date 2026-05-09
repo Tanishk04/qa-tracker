@@ -70,7 +70,12 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; padding: 0; }
+html, body, #root {
+  height: 100%; margin: 0; padding: 0;
+  /* Hard kill horizontal scroll across the app — nothing should ever push past viewport */
+  max-width: 100%;
+  overflow-x: hidden;
+}
 body {
   font-family: var(--font-sans);
   background: var(--bg);
@@ -1012,37 +1017,71 @@ body { overscroll-behavior-y: contain; }
 }
 
 @media (max-width: 640px) {
+  /* Flat flex column. Brand pinned at the top, form vertically centered
+     in the remaining space (margin: auto 0 on the form panel). */
   .login-shell {
-    grid-template-columns: 1fr;
-    overflow-x: hidden;          /* defensive — never let the page scroll sideways */
-  }
-  .login-brand { display: none !important; }
-  .login-form-panel {
-    padding: 16px !important;
-    align-content: start;
-    gap: 14px;
-    width: 100vw;                /* lock to viewport width */
+    display: flex !important;
+    flex-direction: column;
+    grid-template-columns: none !important;
+    align-items: center;             /* horizontal centering for both blocks */
+    width: 100%;
+    min-height: 100vh;
+    padding: 24px 16px;
     box-sizing: border-box;
-    justify-items: stretch;      /* stop place-items: center from leaving children at intrinsic size */
+    gap: 16px;
   }
-  /* Force-override the inline width:400 on the form */
+
+  /* Hide the big marketing panel; the compact .login-mobile-brand block takes over */
+  .login-brand { display: none !important; }
+
+  .login-form-panel {
+    display: flex !important;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 !important;
+    width: 100%;
+    max-width: 420px;        /* match the form so they line up centered */
+    box-sizing: border-box;
+    /* Push the form into the vertical center of the remaining space below the brand */
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
   .login-form {
     width: 100% !important;
     max-width: 100% !important;
+    padding: 22px !important;
+    border-radius: 12px !important;
     box-sizing: border-box !important;
-    padding: 20px !important;
-    border-radius: 10px !important;
   }
   .login-form h1 { font-size: 20px !important; }
+  .login-form input.fld { width: 100%; box-sizing: border-box; }
+
+  /* Compact brand stack above the form */
   .login-mobile-brand {
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    flex-direction: column;
     gap: 10px;
-    padding: 12px 4px 0;
     width: 100%;
-    max-width: 100%;
+    max-width: 420px;        /* same width as form for visual alignment */
     box-sizing: border-box;
+    align-items: flex-start;  /* tagline + blurb left-align inside the column */
   }
+  .login-mobile-tagline {
+    margin: 4px 0 0;
+    font-size: 20px;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .login-mobile-blurb {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
   .reset-shell {
     padding: 16px !important;
     overflow-x: hidden;

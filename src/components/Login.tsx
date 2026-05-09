@@ -121,14 +121,24 @@ export function Login() {
       <div className="login-form-panel" style={{ display: 'grid', placeItems: 'center', padding: 24 }}>
         {/* Compact brand row — visible only on mobile (the brand panel is hidden there) */}
         <div className="login-mobile-brand">
-          <Logo size={36} />
-          <div>
-            <div className="brand-name" style={{ fontSize: 15 }}>QA Tracker</div>
-            <div className="brand-sub">For QA Engineers</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Logo size={36} />
+            <div>
+              <div className="brand-name" style={{ fontSize: 15 }}>QA Tracker</div>
+              <div className="brand-sub">For QA Engineers</div>
+            </div>
           </div>
+          <h2 className="login-mobile-tagline">
+            Replace the spreadsheet.
+            <span style={{ color: 'var(--accent)' }}> Keep the focus.</span>
+          </h2>
+          <p className="login-mobile-blurb">
+            Salesforce-import → auto-generated QA tasks → passive time tracking
+            as you switch between them. No timers, just one keystroke.
+          </p>
         </div>
         <form onSubmit={onSubmit} className="login-form" style={{
-          width: 400, maxWidth: '100%',
+          width: '100%', maxWidth: 400,
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 12, padding: 28,
         }}>
