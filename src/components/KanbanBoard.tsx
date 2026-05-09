@@ -194,6 +194,9 @@ export function KanbanBoard() {
               </button>
             ))}
           </div>
+          <div className="mobile-hint">
+            Drag-and-drop is desktop only. Tap a card to change its stage from the drawer.
+          </div>
           <MobileColumn stage={mobileStage} stories={grouped[mobileStage]} tasks={tasks} logs={logs}
             selected={selected} toggleSelect={toggleSelect} setOpen={setOpenIdLocal}/>
         </div>

@@ -744,6 +744,14 @@ select.fld option, .select option {
    - Mobile:  ≤ 640px (layered on top of tablet)
    ============================================================ */
 
+/* Default visibility (overridden inside the media queries below). Defined here
+   FIRST so the cascade lets media queries win on smaller viewports. */
+.mobile-board { display: none; }
+.topbar-hamburger { display: none; }
+.focus-fab { display: none; }
+.focus-overlay-back { display: none; }
+body { overscroll-behavior-y: contain; }
+
 /* ===== Tablet (≤ 1024px) ===== */
 @media (max-width: 1024px) {
   .topbar-actions .btn-label,
@@ -772,8 +780,6 @@ select.fld option, .select option {
   @keyframes focus-back-in { from { opacity: 0 } to { opacity: 1 } }
 }
 
-/* Default: no overlay backdrop on desktop */
-.focus-overlay-back { display: none; }
 @media (max-width: 1024px) { .focus-overlay-back { display: block; } }
 
 /* ===== Mobile (≤ 640px) ===== */
@@ -833,6 +839,12 @@ select.fld option, .select option {
   }
   .mobile-column { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 80px; }
   .mobile-column .col-empty { padding: 36px 12px; }
+  .mobile-hint {
+    font-size: 11px; color: var(--text-dim);
+    padding: 6px 8px; line-height: 1.4;
+    border: 1px dashed var(--border); border-radius: 6px;
+    background: var(--bg-card);
+  }
 
   /* Cards: more breathing room + bigger tap targets */
   .qa-card { padding: 12px 12px; touch-action: pan-y; }
@@ -902,14 +914,7 @@ select.fld option, .select option {
   .toast { bottom: 80px; }
 }
 
-/* Suppress page-level pull-to-refresh fighting with in-app scroll */
-body { overscroll-behavior-y: contain; }
-
-/* Stage-tabs visible only on mobile */
-.mobile-board { display: none; }
-
-/* Hamburger is hidden on desktop, shown via media query above */
-.topbar-hamburger { display: none; }
+/* (Defaults moved to top of the responsive section above the media queries.) */
 
 /* Hamburger menu sheet (slide-in from the right on mobile) */
 .menu-sheet-back {
