@@ -17,6 +17,7 @@ import { useDialog } from './Dialog'
 import { EditableText } from './EditableText'
 import { ComplexityChip } from './ComplexityChip'
 import { devDisplay, resolveDev } from '../lib/developer'
+import { AdminTab } from './AdminTab'
 
 /** For the Owner <select>: returns the value to put on `<select value>` so the
  *  current developer remains selected even if `story.developer` is the SF id
@@ -27,10 +28,10 @@ function resolveDevValue(raw: string | null, devs: import('../lib/types').Develo
   return d.sf_user_id ?? d.name
 }
 
-type Tab = 'stories' | 'releases' | 'developers' | 'recycle' | 'priority' | 'thresholds' | 'general' | 'account'
+type Tab = 'admin' | 'stories' | 'releases' | 'developers' | 'recycle' | 'priority' | 'thresholds' | 'general' | 'account'
 
 export function Setup({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = useState<Tab>('stories')
+  const [tab, setTab] = useState<Tab>('admin')
   return (
     <div className="modal-back">
       <div className="modal" style={{ width: 1100, height: '85vh', maxHeight: 820 }}>
@@ -40,6 +41,7 @@ export function Setup({ onClose }: { onClose: () => void }) {
         </div>
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <aside className="side-tabs">
+            <button className={`side-tab ${tab === 'admin' ? 'active' : ''}`} onClick={() => setTab('admin')}>Admin</button>
             <button className={`side-tab ${tab === 'stories' ? 'active' : ''}`} onClick={() => setTab('stories')}>Stories</button>
             <button className={`side-tab ${tab === 'releases' ? 'active' : ''}`} onClick={() => setTab('releases')}>Releases</button>
             <button className={`side-tab ${tab === 'developers' ? 'active' : ''}`} onClick={() => setTab('developers')}>Developers</button>
@@ -50,6 +52,7 @@ export function Setup({ onClose }: { onClose: () => void }) {
             <button className={`side-tab ${tab === 'account' ? 'active' : ''}`} onClick={() => setTab('account')}>Account</button>
           </aside>
           <div className="modal-body" style={{ flex: 1 }}>
+            {tab === 'admin' && <AdminTab/>}
             {tab === 'stories' && <StoriesTab onClose={onClose}/>}
             {tab === 'releases' && <ReleasesTab/>}
             {tab === 'developers' && <DevelopersTab/>}

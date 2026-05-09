@@ -39,6 +39,37 @@ function Column({ stage, children, count }: { stage: Stage; children: React.Reac
   )
 }
 
+/** Mobile single-column view. Drop target id matches the stage so dnd-kit
+ *  treats it the same as the desktop column. */
+function MobileColumn({
+  stage, stories, tasks, logs, selected, toggleSelect, setOpen,
+}: {
+  stage: Stage
+  stories: UserStory[]
+  tasks: any[]; logs: any[]
+  selected: Set<string>
+  toggleSelect: (id: string) => void
+  setOpen: (id: string | null) => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage })
+  return (
+    <div ref={setNodeRef} className={`mobile-column ${isOver ? 'over' : ''}`}>
+      {stories.map(s => (
+        <KanbanCard key={s.id}
+          story={s}
+          tasks={tasks.filter((t: any) => t.us_pk === s.id)}
+          logs={logs}
+          onClick={() => setOpen(s.id)}
+          selected={selected.has(s.id)}
+          onToggleSelect={() => toggleSelect(s.id)}/>
+      ))}
+      {stories.length === 0 && (
+        <div className="col-empty">No stories in this stage</div>
+      )}
+    </div>
+  )
+}
+
 export function KanbanBoard() {
   const qc = useQueryClient()
   const { data: stories = [] } = useStories()
@@ -119,11 +150,13 @@ export function KanbanBoard() {
   }
 
   const openStory = (openId ? stories.find(s => s.id === openId) : null) ?? null
+  const [mobileStage, setMobileStage] = useState<Stage>('in_progress')
 
   return (
     <>
       <FilterBar />
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+        {/* Desktop / tablet view — 5 columns side-by-side */}
         <div className="board">
           {STAGES.map(stage => (
             <Column key={stage} stage={stage} count={grouped[stage].length}>
@@ -143,6 +176,26 @@ export function KanbanBoard() {
               )}
             </Column>
           ))}
+        </div>
+
+        {/* Mobile view — sticky stage tabs + single active column */}
+        <div className="mobile-board">
+          <div className="stage-tabs" role="tablist" aria-label="Kanban stages">
+            {STAGES.map(stage => (
+              <button key={stage}
+                role="tab"
+                aria-selected={mobileStage === stage}
+                className={`stage-tab ${mobileStage === stage ? 'active' : ''}`}
+                onClick={() => setMobileStage(stage)}
+              >
+                <span className="stage-dot" style={{ background: STAGE_COLOR[stage] }} />
+                <span>{STAGE_LABELS[stage]}</span>
+                <span className="col-count">{grouped[stage].length}</span>
+              </button>
+            ))}
+          </div>
+          <MobileColumn stage={mobileStage} stories={grouped[mobileStage]} tasks={tasks} logs={logs}
+            selected={selected} toggleSelect={toggleSelect} setOpen={setOpenIdLocal}/>
         </div>
       </DndContext>
 
