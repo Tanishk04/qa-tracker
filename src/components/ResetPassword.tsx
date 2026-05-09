@@ -36,11 +36,11 @@ export function ResetPassword({ onDone }: Props) {
   }
 
   return (
-    <div style={{
+    <div className="reset-shell" style={{
       minHeight: '100vh', display: 'grid', placeItems: 'center',
       background: 'var(--bg)', padding: 24,
     }}>
-      <form onSubmit={onSubmit} style={{
+      <form onSubmit={onSubmit} className="login-form" style={{
         width: 420, maxWidth: '100%',
         background: 'var(--bg-card)', border: '1px solid var(--border)',
         borderRadius: 12, padding: 28,
