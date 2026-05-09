@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { ActivityLog, Task, UserStory } from './types'
+import type { ActivityLog, AppSettings, Developer, Release, Task, UserStory } from './types'
 import { computeTaskSeconds, fmtDuration } from './time'
 import { TASK_LABELS, TASK_ORDER } from './types'
 
@@ -48,6 +48,40 @@ export function exportStoriesCSV(
   const ymd = new Date().toISOString().slice(0, 10)
   a.href = url
   a.download = `qa-tracker-${ymd}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Export every row owned by the current user as a single JSON file.
+ * Useful as an off-Supabase backup before destructive admin actions.
+ */
+export function exportFullBackupJSON(payload: {
+  stories: UserStory[]
+  tasks: Task[]
+  logs: ActivityLog[]
+  developers: Developer[]
+  releases: Release[]
+  settings: AppSettings | null
+}) {
+  const ymd = new Date().toISOString().slice(0, 10)
+  const body = JSON.stringify({
+    exported_at: new Date().toISOString(),
+    schema_version: 7,
+    counts: {
+      stories: payload.stories.length,
+      tasks: payload.tasks.length,
+      activity_logs: payload.logs.length,
+      developers: payload.developers.length,
+      releases: payload.releases.length,
+    },
+    ...payload,
+  }, null, 2)
+  const blob = new Blob([body], { type: 'application/json;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `qa-tracker-backup-${ymd}.json`
   a.click()
   URL.revokeObjectURL(url)
 }

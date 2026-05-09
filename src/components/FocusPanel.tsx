@@ -15,7 +15,7 @@ import { Avatar } from './Avatar'
 const openStory = (s: UserStory) =>
   window.dispatchEvent(new CustomEvent('app:open-story', { detail: s.id }))
 
-export function FocusPanel({ onHide }: { onHide: () => void }) {
+export function FocusPanel({ onHide, open = true }: { onHide: () => void; open?: boolean }) {
   useTick(1000)
   const qc = useQueryClient()
   const startTask = useStartTaskGuarded()
@@ -97,7 +97,7 @@ export function FocusPanel({ onHide }: { onHide: () => void }) {
   }
 
   return (
-    <aside className="focus">
+    <aside className={`focus ${open ? 'open' : ''}`}>
       <div className="focus-head">
         <div className="focus-title">
           <Icon name="target" size={14}/>

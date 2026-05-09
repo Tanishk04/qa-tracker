@@ -303,7 +303,7 @@ export function Drawer({ story, tasks, logs, onClose }: Props) {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <div className="section-label" style={{ margin: 0 }}>Pipeline</div>
-                <div style={{ display: 'flex', gap: 8, fontSize: 11, color: 'var(--text-dim)' }}>
+                <div className="kbd-hints" style={{ display: 'flex', gap: 8, fontSize: 11, color: 'var(--text-dim)' }}>
                   <span><span className="kbd-mini">S</span> start</span>
                   <span><span className="kbd-mini">C</span> complete</span>
                   <span><span className="kbd-mini">K</span> skip</span>

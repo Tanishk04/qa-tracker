@@ -184,6 +184,59 @@ export async function updatePassword(password: string) {
   if (error) throw error
 }
 
+/** Sign out from every device / browser session for the current user. */
+export async function signOutAllDevices() {
+  const { error } = await supabase.auth.signOut({ scope: 'global' })
+  if (error) throw error
+}
+
+/** Trigger a password-reset email to the currently signed-in user's address. */
+export async function resetMyPassword() {
+  const { data, error: getErr } = await supabase.auth.getUser()
+  if (getErr) throw getErr
+  const email = data.user?.email
+  if (!email) throw new Error('No email on the current session')
+  const redirectTo = typeof window !== 'undefined' ? window.location.origin : undefined
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  if (error) throw error
+}
+
+/**
+ * Wipe every story-graph row for the current user (stories, tasks, activity_logs
+ * cascade via FK; releases + developers are cleared explicitly). RLS guards each
+ * delete to the calling user's rows. Settings are preserved (those are
+ * preferences, not data).
+ */
+export async function resetAllData() {
+  // The on-delete-cascade chain on user_stories handles tasks + activity_logs.
+  const tables = ['user_stories', 'releases', 'developers'] as const
+  for (const t of tables) {
+    const { error } = await supabase.from(t).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    if (error) throw new Error(`reset failed at ${t}: ${error.message}`)
+  }
+}
+
+/** Re-seed the releases picklist from any release_label values that exist on stories
+ *  but aren't already in the releases table. Returns the number of rows added. */
+export async function reseedReleasesFromStories(): Promise<number> {
+  const { data: u } = await supabase.auth.getUser()
+  const user_id = u.user?.id
+  if (!user_id) throw new Error('Not authenticated')
+  const { data: stories, error: sErr } = await supabase
+    .from('user_stories').select('release_label')
+  if (sErr) throw sErr
+  const { data: existing, error: eErr } = await supabase.from('releases').select('name')
+  if (eErr) throw eErr
+  const haveSet = new Set((existing ?? []).map(r => r.name))
+  const want = new Set<string>()
+  for (const s of stories ?? []) if (s.release_label && !haveSet.has(s.release_label)) want.add(s.release_label)
+  if (want.size === 0) return 0
+  const rows = Array.from(want).map(name => ({ user_id, name }))
+  const { error } = await supabase.from('releases').upsert(rows, { onConflict: 'user_id,name' })
+  if (error) throw error
+  return rows.length
+}
+
 export async function updatePinned(us_pk: string, pinned: boolean) {
   const { error } = await supabase
     .from('user_stories').update({ pinned }).eq('id', us_pk)

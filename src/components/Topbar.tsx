@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useStories, useTasks, useLogs } from '../hooks/useData'
 import { useTick } from '../hooks/useTick'
@@ -31,6 +32,7 @@ export function Topbar({ onOpenImport, onOpenSetup, onOpenTimesheet, onOpenPrior
   const { theme, toggle } = useTheme()
   const dialog = useDialog()
   const startTask = useStartTaskGuarded()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const activeTask = tasks.find(t => t.status === 'in_progress') ?? null
   const activeUs = activeTask ? stories.find(s => s.id === activeTask.us_pk) : null
@@ -163,6 +165,55 @@ export function Topbar({ onOpenImport, onOpenSetup, onOpenTimesheet, onOpenPrior
           </span>
         </button>
       </div>
+
+      {/* Mobile-only hamburger — collapses every right-side action */}
+      <button
+        className="topbar-hamburger btn-icon"
+        onClick={() => setMenuOpen(true)}
+        aria-label="Open menu"
+      >
+        <Icon name="list" size={18}/>
+      </button>
+
+      {menuOpen && (
+        <>
+          <div className="menu-sheet-back" onClick={() => setMenuOpen(false)} />
+          <aside className="menu-sheet" role="dialog" aria-label="Menu">
+            <div className="menu-sheet-head">
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Menu</div>
+              <button className="btn-icon" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+                <Icon name="x" size={16}/>
+              </button>
+            </div>
+            <div className="menu-sheet-list">
+              <button className="menu-sheet-item" onClick={() => { setMenuOpen(false); openSearch() }}>
+                <Icon name="search" size={16}/> Search
+                <span className="meta">Ctrl K</span>
+              </button>
+              <button className="menu-sheet-item" onClick={() => { setMenuOpen(false); onOpenPrioritize() }}>
+                <Icon name="sliders" size={16}/> Prioritize
+              </button>
+              <button className="menu-sheet-item" onClick={() => { setMenuOpen(false); onExport() }}>
+                <Icon name="download" size={16}/> Export
+              </button>
+              <button className="menu-sheet-item" onClick={() => { setMenuOpen(false); onOpenTimesheet() }}>
+                <Icon name="clock" size={16}/> Timesheet
+              </button>
+              <button className="menu-sheet-item" onClick={() => { setMenuOpen(false); onOpenImport() }}>
+                <Icon name="upload" size={16}/> Import
+              </button>
+              <button className="menu-sheet-item" onClick={() => { setMenuOpen(false); onOpenSetup() }}>
+                <Icon name="settings" size={16}/> Setup
+              </button>
+              <div style={{ borderTop: '1px solid var(--border)', margin: '8px 0' }}/>
+              <button className="menu-sheet-item" onClick={() => { toggle() }}>
+                <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16}/>
+                Switch to {theme === 'dark' ? 'light' : 'dark'} mode
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
     </header>
   )
 }

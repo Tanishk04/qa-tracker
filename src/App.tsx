@@ -40,7 +40,13 @@ export default function App() {
   const [setupOpen, setSetupOpen] = useState(false)
   const [timesheetOpen, setTimesheetOpen] = useState(false)
   const [prioritizeOpen, setPrioritizeOpen] = useState(false)
-  const [focusVisible, setFocusVisible] = useState(true)
+  // Default to "open" only on real desktop. Tablet/mobile users open the
+  // focus panel on demand via the dock-tab / FAB.
+  const [focusVisible, setFocusVisible] = useState<boolean>(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(min-width: 1025px)').matches
+      : true
+  )
   const qc = useQueryClient()
 
   useEffect(() => {
@@ -102,9 +108,22 @@ export default function App() {
             <Dashboard />
             <KanbanBoard />
           </div>
-          {focusVisible && <FocusPanel onHide={() => setFocusVisible(false)} />}
+          {/* Always rendered so the slide-in animation has a node to animate.
+              On desktop the .focus class lays it out as a grid cell;
+              on tablet/mobile CSS makes it a fixed overlay/sheet. */}
+          <FocusPanel open={focusVisible} onHide={() => setFocusVisible(false)} />
         </div>
 
+        {/* Backdrop on tablet/mobile when the focus panel is open as overlay */}
+        {focusVisible && (
+          <div
+            className="focus-overlay-back"
+            onClick={() => setFocusVisible(false)}
+            aria-hidden
+          />
+        )}
+
+        {/* Dock tab — visible on tablet when focus is closed, hidden on mobile via CSS */}
         {!focusVisible && (
           <button
             className="focus-dock"
@@ -115,6 +134,17 @@ export default function App() {
             <Icon name="chevronRight" size={14} />
             <span className="focus-dock-label">FOCUS</span>
             <Icon name="target" size={14} />
+          </button>
+        )}
+
+        {/* FAB — visible only on mobile via CSS (.focus-fab) */}
+        {!focusVisible && (
+          <button
+            className="focus-fab"
+            onClick={() => setFocusVisible(true)}
+            aria-label="Open Today's Focus"
+          >
+            <Icon name="target" size={20}/>
           </button>
         )}
 
