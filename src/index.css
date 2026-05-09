@@ -912,6 +912,58 @@ body { overscroll-behavior-y: contain; }
 
   /* Toast doesn't fight with FAB */
   .toast { bottom: 80px; }
+
+  /* ----- Drawer polish (Tasks tab is cramped on narrow viewports) ----- */
+
+  /* Drawer header — keep selects from spanning full row & wrapping awkwardly */
+  .drawer-meta select.fld { max-width: 60vw; }
+  .drawer-title-editable, .drawer-title { font-size: 16px; }
+
+  /* Tabs strip — drop icons so labels stay legible without truncating */
+  .drawer .drawer-tab > svg { display: none; }
+  .drawer .drawer-tab {
+    padding: 10px 8px;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  /* Task rows — stack actions BELOW the info column so the row breathes.
+     Desktop layout (3-col grid) stays untouched outside this media query. */
+  .drawer .task-item {
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .drawer .task-item .task-actions {
+    grid-column: 1 / -1;
+    margin-top: 2px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .drawer .task-item .task-actions .btn {
+    flex: 1 1 0;                  /* equal-share row */
+    justify-content: center;
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  /* On task rows, let the title wrap nicely instead of getting squeezed */
+  .drawer .task-item .task-name { font-size: 14px; line-height: 1.3; }
+  .drawer .task-item .task-meta { font-size: 11px; }
+
+  /* Drawer foot — stack the action button + the hint vertically */
+  .drawer-foot {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .drawer-foot > * {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  /* The hint span beside the button → smaller + dim, full width */
+  .drawer-foot > span { font-size: 11px; color: var(--text-dim); }
 }
 
 /* (Defaults moved to top of the responsive section above the media queries.) */
