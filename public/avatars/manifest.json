@@ -1,0 +1,15 @@
+{
+  "files": [
+    "girl-01.svg",
+    "girl-11.svg",
+    "girl-18.svg",
+    "girl-19.svg",
+    "girl-20.svg",
+    "boy-04.svg",
+    "boy-05.svg",
+    "boy-18.svg",
+    "boy-19.svg",
+    "boy-20.svg"
+  ],
+  "_help": "Drop your exported PNG/SVG avatar files into this folder, then list their filenames here. Setup → Developers picks them up automatically."
+}

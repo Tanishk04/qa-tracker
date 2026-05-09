@@ -1,0 +1,55 @@
+{
+  "name": "qa-tracker",
+  "private": true,
+  "version": "0.5.0",
+  "type": "module",
+  "description": "Personal QA productivity tool — Salesforce import, kanban, passive time tracking, evidence checks, and a dark/light theme. Single-user.",
+  "keywords": [
+    "qa",
+    "kanban",
+    "task-tracker",
+    "salesforce",
+    "supabase",
+    "react",
+    "vite",
+    "typescript"
+  ],
+  "author": "Tanishk04",
+  "license": "MIT",
+  "homepage": "https://github.com/Tanishk04/qa-tracker#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tanishk04/qa-tracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Tanishk04/qa-tracker/issues"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.1.0",
+    "@dnd-kit/sortable": "^8.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@supabase/supabase-js": "^2.57.0",
+    "@tanstack/react-query": "^5.51.0",
+    "papaparse": "^5.4.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.4"
+  }
+}

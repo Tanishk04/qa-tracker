@@ -1,0 +1,12 @@
+{
+  "name": "QA Tracker",
+  "short_name": "QA Tracker",
+  "description": "Personal QA productivity tool — Salesforce import, kanban, passive time tracking",
+  "icons": [
+    { "src": "/brand/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" }
+  ],
+  "theme_color": "#D87749",
+  "background_color": "#0b0d10",
+  "display": "standalone",
+  "start_url": "/"
+}

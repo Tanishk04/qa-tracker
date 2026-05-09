@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+# Compiled vite config (TS project-references emit these)
+vite.config.js
+vite.config.d.ts
+
+# Vercel
+.vercel/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Environment — never commit real keys
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Claude / planning
+.claude/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.bak
+*.tmp
