@@ -96,6 +96,13 @@ input, select, textarea { font-family: inherit; }
 .app { display: grid; grid-template-rows: 56px 1fr; height: 100vh; overflow: hidden; }
 .main { display: grid; grid-template-columns: 1fr 320px; overflow: hidden; min-height: 0; }
 .main.no-focus { grid-template-columns: 1fr; }
+/* On desktop, when the focus panel is closed it has no grid track and would
+   otherwise fall into an implicit row below the workspace (looking like a
+   bottom sheet). Hide it. On tablet/mobile we KEEP rendering it because the
+   slide-in animation needs a node to animate. */
+@media (min-width: 1025px) {
+  .main.no-focus .focus { display: none; }
+}
 .workspace {
   padding: 20px 24px 0;
   overflow-y: auto;
