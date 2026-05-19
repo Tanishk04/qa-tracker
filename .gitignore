@@ -37,6 +37,9 @@ yarn-debug.log*
 # Claude / planning
 .claude/
 
+# Installed agent skills (regenerable from skills-lock.json — see README)
+.agents/
+
 # Coverage
 coverage/
 .nyc_output/
