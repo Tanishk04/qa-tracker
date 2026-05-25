@@ -1,9 +1,9 @@
-import { DndContext, DragEndEvent, PointerSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, closestCenter, pointerWithin, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useStories, useTasks, useLogs } from '../hooks/useData'
 import type { Stage, UserStory } from '../lib/types'
-import { STAGES, STAGE_LABELS } from '../lib/types'
+import { STAGES, STAGE_LABELS, RELEASE_TRACK_LABELS } from '../lib/types'
 import { KanbanCard } from './KanbanCard'
 import { updateStoryStage, updateAutoStage } from '../lib/api'
 import { Drawer } from './Drawer'
@@ -14,6 +14,15 @@ import { QuickFind } from './QuickFind'
 import { BulkBar } from './BulkBar'
 import { useSettings } from '../hooks/useSettings'
 import { Icon } from './Icon'
+
+/** Pointer-first collision detection: highlight the column the cursor is
+ *  physically over, falling back to closest-center only when the cursor is
+ *  in the 12 px CSS gap between columns.  closestCenter uses collisionRect
+ *  (initial card rect + live drag delta) — not the ghost's DOM position. */
+function detectCollision(args: Parameters<typeof pointerWithin>[0]) {
+  const over = pointerWithin(args)
+  return over.length > 0 ? over : closestCenter(args)
+}
 
 const STAGE_COLOR: Record<Stage, string> = {
   not_started: 'var(--st-not-started)',
@@ -26,13 +35,16 @@ const STAGE_COLOR: Record<Stage, string> = {
 function Column({ stage, children, count }: { stage: Stage; children: React.ReactNode; count: number }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   return (
-    <section className="column">
+    // Register the WHOLE column (including sticky header) as the droppable area.
+    // When the pointer crosses into the col-head, pointerWithin still detects this
+    // column. The isOver visual highlight stays on col-body only.
+    <section className="column" ref={setNodeRef}>
       <header className="col-head">
         <span className="col-dot" style={{ background: STAGE_COLOR[stage] }} />
         <span className="col-title">{STAGE_LABELS[stage]}</span>
         <span className="col-count">{count}</span>
       </header>
-      <div ref={setNodeRef} className={`col-body ${isOver ? 'over' : ''}`}>
+      <div className={`col-body ${isOver ? 'over' : ''}`}>
         {children}
       </div>
     </section>
@@ -70,14 +82,44 @@ function MobileColumn({
   )
 }
 
+/** Skeleton shown while stories are loading — 5 faded column headers visible
+ *  through a frosted-glass overlay so the board structure is apparent. */
+function BoardSkeleton() {
+  return (
+    <div className="board-skeleton-wrap">
+      <div className="board board-skeleton">
+        {STAGES.map(stage => (
+          <section key={stage} className="column">
+            <header className="col-head">
+              <span className="col-dot" style={{ background: STAGE_COLOR[stage] }} />
+              <span className="col-title">{STAGE_LABELS[stage]}</span>
+              <span className="col-count">—</span>
+            </header>
+            <div className="col-body" />
+          </section>
+        ))}
+      </div>
+      <div className="board-loading-center">
+        <div className="import-spinner" style={{ width: 44, height: 44, borderWidth: 4 } as React.CSSProperties} />
+        <span className="import-loading-label">Loading your board…</span>
+      </div>
+    </div>
+  )
+}
+
 export function KanbanBoard() {
   const qc = useQueryClient()
-  const { data: stories = [] } = useStories()
+  const { data: stories = [], isLoading: storiesLoading } = useStories()
   const { data: tasks = [] } = useTasks()
   const { data: logs = [] } = useLogs()
   const [openId, setOpenIdLocal] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const activeStory = useMemo(
+    () => (activeId ? stories.find(s => s.id === activeId) ?? null : null),
+    [activeId, stories],
+  )
   const { applies } = useFilter()
   const { data: settings } = useSettings()
 
@@ -96,7 +138,7 @@ export function KanbanBoard() {
     setTimeout(() => setToast(null), 3500)
   }
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 2 } }))
   const filtered = useMemo(() => stories.filter(applies), [stories, applies])
 
   const grouped = useMemo(() => {
@@ -131,7 +173,12 @@ export function KanbanBoard() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  function onDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id))
+  }
+
   async function onDragEnd(e: DragEndEvent) {
+    setActiveId(null)
     const overId = e.over?.id
     const id = String(e.active.id)
     if (!overId) return
@@ -144,9 +191,22 @@ export function KanbanBoard() {
     const v = validateStageMove(story.stage, stage, storyTasks)
     if (!v.ok) { showToast(v.reason); return }
 
-    if (story.auto_stage) await updateAutoStage(id, false)
-    await updateStoryStage(id, stage)
-    qc.invalidateQueries({ queryKey: ['stories'] })
+    // Optimistic update — card moves instantly in the UI; API confirms in background.
+    qc.setQueryData<UserStory[]>(['stories'], old =>
+      (old ?? []).map(s => s.id === id ? { ...s, stage, auto_stage: false } : s)
+    )
+
+    try {
+      if (story.auto_stage) await updateAutoStage(id, false)
+      await updateStoryStage(id, stage)
+      qc.invalidateQueries({ queryKey: ['stories'] })
+    } catch {
+      // Roll back to the original story state if the server rejects the move.
+      qc.setQueryData<UserStory[]>(['stories'], old =>
+        (old ?? []).map(s => s.id === id ? story : s)
+      )
+      showToast('Move failed — card returned to its original column.')
+    }
   }
 
   const openStory = (openId ? stories.find(s => s.id === openId) : null) ?? null
@@ -155,52 +215,83 @@ export function KanbanBoard() {
   return (
     <>
       <FilterBar />
-      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-        {/* Desktop / tablet view — 5 columns side-by-side */}
-        <div className="board">
-          {STAGES.map(stage => (
-            <Column key={stage} stage={stage} count={grouped[stage].length}>
-              {grouped[stage].map(s => (
-                <KanbanCard
-                  key={s.id}
-                  story={s}
-                  tasks={tasks.filter(t => t.us_pk === s.id)}
-                  logs={logs}
-                  onClick={() => setOpenIdLocal(s.id)}
-                  selected={selected.has(s.id)}
-                  onToggleSelect={() => toggleSelect(s.id)}
-                />
-              ))}
-              {grouped[stage].length === 0 && (
-                <div className="col-empty">Drop here</div>
-              )}
-            </Column>
-          ))}
-        </div>
 
-        {/* Mobile view — sticky stage tabs + single active column */}
-        <div className="mobile-board">
-          <div className="stage-tabs" role="tablist" aria-label="Kanban stages">
+      {storiesLoading ? <BoardSkeleton /> : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={detectCollision}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+        >
+          {/* Desktop / tablet view — 5 columns side-by-side */}
+          <div className="board">
             {STAGES.map(stage => (
-              <button key={stage}
-                role="tab"
-                aria-selected={mobileStage === stage}
-                className={`stage-tab ${mobileStage === stage ? 'active' : ''}`}
-                onClick={() => setMobileStage(stage)}
-              >
-                <span className="stage-dot" style={{ background: STAGE_COLOR[stage] }} />
-                <span>{STAGE_LABELS[stage]}</span>
-                <span className="col-count">{grouped[stage].length}</span>
-              </button>
+              <Column key={stage} stage={stage} count={grouped[stage].length}>
+                {grouped[stage].map(s => (
+                  <KanbanCard
+                    key={s.id}
+                    story={s}
+                    tasks={tasks.filter(t => t.us_pk === s.id)}
+                    logs={logs}
+                    onClick={() => setOpenIdLocal(s.id)}
+                    selected={selected.has(s.id)}
+                    onToggleSelect={() => toggleSelect(s.id)}
+                  />
+                ))}
+                {grouped[stage].length === 0 && (
+                  <div className="col-empty">Drop here</div>
+                )}
+              </Column>
             ))}
           </div>
-          <div className="mobile-hint">
-            Drag-and-drop is desktop only. Tap a card to change its stage from the drawer.
+
+          {/* Mobile view — sticky stage tabs + single active column */}
+          <div className="mobile-board">
+            <div className="stage-tabs" role="tablist" aria-label="Kanban stages">
+              {STAGES.map(stage => (
+                <button key={stage}
+                  role="tab"
+                  aria-selected={mobileStage === stage}
+                  className={`stage-tab ${mobileStage === stage ? 'active' : ''}`}
+                  onClick={() => setMobileStage(stage)}
+                >
+                  <span className="stage-dot" style={{ background: STAGE_COLOR[stage] }} />
+                  <span>{STAGE_LABELS[stage]}</span>
+                  <span className="col-count">{grouped[stage].length}</span>
+                </button>
+              ))}
+            </div>
+            <div className="mobile-hint">
+              Drag-and-drop is desktop only. Tap a card to change its stage from the drawer.
+            </div>
+            <MobileColumn stage={mobileStage} stories={grouped[mobileStage]} tasks={tasks} logs={logs}
+              selected={selected} toggleSelect={toggleSelect} setOpen={setOpenIdLocal}/>
           </div>
-          <MobileColumn stage={mobileStage} stories={grouped[mobileStage]} tasks={tasks} logs={logs}
-            selected={selected} toggleSelect={toggleSelect} setOpen={setOpenIdLocal}/>
-        </div>
-      </DndContext>
+
+          {/* Floating card clone that follows the cursor during drag.
+              dropAnimation={null} so the overlay disappears instantly on drop
+              rather than trying to animate to the target column. */}
+          <DragOverlay dropAnimation={null}>
+            {activeStory && (
+              <div className="qa-card drag-overlay">
+                <div className="card-top">
+                  <span className="card-id mono">{activeStory.us_id}</span>
+                  {activeStory.release_track && (
+                    <span className="card-pri" style={{
+                      flexShrink: 0,
+                      background: activeStory.release_track === 'major' ? 'var(--bg-hover)' : 'var(--accent-soft)',
+                      color: activeStory.release_track === 'major' ? 'var(--text-muted)' : 'var(--accent)',
+                    }}>
+                      {RELEASE_TRACK_LABELS[activeStory.release_track]}
+                    </span>
+                  )}
+                </div>
+                <div className="card-title">{activeStory.title}</div>
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
+      )}
 
       {toast && <div className="toast">{toast}</div>}
 

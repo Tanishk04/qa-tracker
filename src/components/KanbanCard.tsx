@@ -61,7 +61,7 @@ export function KanbanCard({ story, tasks, logs, onClick, selected, onToggleSele
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform) }}
+      style={{ transform: isDragging ? undefined : CSS.Translate.toString(transform) }}
       className={`qa-card ${isDragging ? 'dragging' : ''} ${selected ? 'selected' : ''} ${story.archived ? 'archived' : ''}`}
       onClick={(e) => {
         if (isDragging) return
@@ -78,14 +78,12 @@ export function KanbanCard({ story, tasks, logs, onClick, selected, onToggleSele
         <ComplexityChip value={story.complexity} onChange={setComplexity} stopPropagation />
         {story.release_track && (
           <span className="card-pri" style={{
+            flexShrink: 0,
             background: story.release_track === 'major' ? 'var(--bg-hover)' : 'var(--accent-soft)',
             color: story.release_track === 'major' ? 'var(--text-muted)' : 'var(--accent)',
           }}>{RELEASE_TRACK_LABELS[story.release_track]}</span>
         )}
-        {stuck && <span className="card-pri" style={{
-          background: 'oklch(0.78 0.13 80 / 0.16)', color: 'oklch(0.82 0.13 80)'
-        }}>STUCK</span>}
-        <span className={`card-time ${hasActive ? 'running' : ''}`}>
+        <span className={`card-time ${hasActive ? 'running' : ''}`} style={{ flexShrink: 0 }}>
           {hasActive && <Icon name="play" size={9}/>}
           {fmtDuration(totalSec)}
         </span>
@@ -107,6 +105,9 @@ export function KanbanCard({ story, tasks, logs, onClick, selected, onToggleSele
       </div>
 
       <div className="card-foot">
+        {stuck && (
+          <span className="card-stuck">STUCK</span>
+        )}
         {story.release_label && (
           <span className="meta" title={story.release_label}>
             <Icon name="folder" size={11}/>

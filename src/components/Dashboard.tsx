@@ -183,7 +183,7 @@ export function Dashboard() {
             <div key={r.label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div className="release-row">
                 <div className="release-name" title={r.label}>
-                  {r.label.length > 22 ? r.label.slice(0, 22) + '…' : r.label}
+                  {r.label}
                 </div>
                 <div className="release-bar"><div className="release-fill" style={{ width: `${r.pct}%` }} /></div>
                 <div className="release-meta">{r.done}/{r.total} · {r.pct}%</div>
