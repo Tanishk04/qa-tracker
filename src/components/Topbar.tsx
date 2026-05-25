@@ -43,6 +43,7 @@ export function Topbar({ onOpenImport, onOpenSetup, onOpenTimesheet, onOpenPrior
     ? [...tasks].filter(t => t.status === 'paused')
         .sort((a, b) => +new Date(b.updated_at) - +new Date(a.updated_at))[0]
     : null
+  const resumeUs = resumeTarget ? stories.find(s => s.id === resumeTarget.us_pk) : null
 
   function openSearch() {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, metaKey: true }))
@@ -113,7 +114,17 @@ export function Topbar({ onOpenImport, onOpenSetup, onOpenTimesheet, onOpenPrior
         ) : (
           <div className="active-task">
             <span className="pulse" />
-            <span>{resumeTarget ? `Paused · ${resumeTarget.us_pk ? '' : ''}${TASK_LABELS[resumeTarget.type]}` : 'No active task'}</span>
+            <span>
+              {resumeTarget
+                ? <>
+                    <span style={{ color: 'var(--text-muted)' }}>Paused</span>
+                    {resumeUs && <span className="mono" style={{ color: 'var(--text)', marginLeft: 8 }}>{resumeUs.us_id}</span>}
+                    <span style={{ color: 'var(--text-dim)', margin: '0 6px' }}>·</span>
+                    <span style={{ color: 'var(--text)' }}>{TASK_LABELS[resumeTarget.type]}</span>
+                  </>
+                : 'No active task'
+              }
+            </span>
             {resumeTarget && (
               <button
                 className="btn-icon"
@@ -132,7 +143,7 @@ export function Topbar({ onOpenImport, onOpenSetup, onOpenTimesheet, onOpenPrior
       <div className="topbar-actions">
         <button className="search-trigger" onClick={openSearch}>
           <Icon name="search" size={14} />
-          <span>Search stories, sprints…</span>
+          <span>Search stories, releases…</span>
           <span className="kbd-group"><span className="kbd">Ctrl</span><span className="kbd">K</span></span>
         </button>
 

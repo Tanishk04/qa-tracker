@@ -24,13 +24,23 @@ export function computeStage(tasks: Task[]): Stage {
   return 'not_started'
 }
 
-/** For manual moves: forward jumps need their gate task done; backward moves are free. */
+/** For manual moves: forward jumps need their gate task done; backward moves are
+ *  free — except the single case where a timer is actively running and the
+ *  destination is 'not_started' (that stage means "no work begun", which would
+ *  be a lie while a task timer is ticking). Moving from SIT → In Progress with
+ *  a running task is fine (the task IS the in_progress work). */
 export function validateStageMove(
   from: Stage,
   to: Stage,
   tasks: Task[],
 ): { ok: true } | { ok: false; reason: string } {
-  if (RANK[to] <= RANK[from]) return { ok: true } // backwards always allowed
+  if (RANK[to] <= RANK[from]) {
+    const hasRunning = tasks.some(t => t.status === 'in_progress')
+    if (hasRunning && to === 'not_started') {
+      return { ok: false, reason: 'Pause the active task before moving back to Not Started.' }
+    }
+    return { ok: true }
+  }
   const sit = tasks.find(t => t.type === 'sit_test')
   const uat = tasks.find(t => t.type === 'uat_test')
 

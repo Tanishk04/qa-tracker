@@ -133,38 +133,47 @@ export function FocusPanel({ onHide, open = true }: { onHide: () => void; open?:
               const dev = resolveDev(story.developer, devs)
               return (
                 <div key={story.id} className="focus-suggestion">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <span className="card-id mono">{story.us_id}</span>
-                    {story.complexity && <span className={`cx-pill cx-${story.complexity}`}>{story.complexity}</span>}
-                    {running && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color: 'var(--accent)' }}>
-                        <span className="pulse" style={{ width: 5, height: 5, background: 'var(--accent)', borderRadius: '50%' }} />
-                        running
-                      </span>
+                  {/* Header: US-ID · complexity · [live dot] · time · unpin */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                    <span className="card-id mono" style={{ flexShrink: 0 }}>{story.us_id}</span>
+                    {story.complexity && (
+                      <span className={`cx-pill cx-${story.complexity}`} style={{ flexShrink: 0 }}>{story.complexity}</span>
                     )}
-                    <button className="btn-icon" style={{ width: 22, height: 22, marginLeft: 'auto' }}
+                    {running && (
+                      <span style={{ width: 5, height: 5, background: 'var(--accent)', borderRadius: '50%', flexShrink: 0 }} />
+                    )}
+                    <span
+                      className="mono"
+                      style={{
+                        marginLeft: 'auto', fontSize: 11, flexShrink: 0,
+                        color: running ? 'var(--accent)' : 'var(--text-muted)',
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                      }}
+                    >
+                      <Icon name="clock" size={10}/>
+                      {fmtDuration(totalSec)}
+                    </span>
+                    <button className="btn-icon" style={{ width: 20, height: 20, flexShrink: 0 }}
                       onClick={() => unpin(story.id)} aria-label="Unpin">
-                      <Icon name="x" size={12}/>
+                      <Icon name="x" size={11}/>
                     </button>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.35, marginBottom: 8, cursor: 'pointer' }}
-                    onClick={() => openStory(story)}>
+
+                  {/* Title */}
+                  <div
+                    style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4, marginBottom: 8, cursor: 'pointer' }}
+                    onClick={() => openStory(story)}
+                  >
                     {story.title}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-muted)' }}>
-                    <Icon name="clock" size={11}/>
-                    <span className="mono" style={{ color: running ? 'var(--accent)' : undefined }}>{fmtDuration(totalSec)}</span>
-                    <div style={{ flex: 1 }} />
-                    {dn && <Avatar seed={dev?.avatar_seed ?? dn} name={dn} size={20}/>}
-                  </div>
+
+                  {/* Action */}
                   {running ? (
-                    <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
-                      onClick={pauseRunning}>
+                    <button className="btn btn-outline focus-action-btn" onClick={pauseRunning}>
                       <Icon name="pause" size={12}/> Pause {TASK_LABELS[running.type]}
                     </button>
                   ) : next ? (
-                    <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
-                      onClick={() => startNext(next.id)}>
+                    <button className="btn btn-primary focus-action-btn" onClick={() => startNext(next.id)}>
                       <Icon name="play" size={12}/> Start {TASK_LABELS[next.type]}
                     </button>
                   ) : null}

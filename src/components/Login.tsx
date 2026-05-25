@@ -99,22 +99,22 @@ export function Login() {
           </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              'Auto-generated tasks per US',
+              'Auto-generated 5-task pipeline per user story',
               'Passive time tracking via state transitions',
-              'Drag-and-drop priority ordering',
+              'Drag-and-drop kanban with auto-stage logic',
               'One global active task — switching is atomic',
-              'Drag & drop kanban with auto-stage',
-              'Evidence checks for SIT & UAT',
+              'Custom priority ordering via drag-to-rank',
+              'Evidence checks for SIT & UAT gates',
             ].map(t => (
               <li key={t} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: 'var(--text)' }}>
-                <Icon name="check" size={14} className="text-accent" />
+                <span style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 1, display: 'flex' }}><Icon name="check" size={14} /></span>
                 <span>{t}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div style={{ position: 'relative', fontSize: 11, color: 'var(--text-dim)' }}>v0.2 · personal build</div>
+        <div style={{ position: 'relative', fontSize: 11, color: 'var(--text-dim)' }}>v{import.meta.env.VITE_APP_VERSION ?? '0.5'} · open source</div>
       </aside>
 
       {/* Form panel */}

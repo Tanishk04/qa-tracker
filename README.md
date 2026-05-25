@@ -138,20 +138,15 @@ npm run dev
 # → http://localhost:5173
 ```
 
-**Database:** in Supabase SQL Editor, run the migration files in order:
+**Database:** in Supabase SQL Editor, run the single combined schema:
 
 ```
-supabase/schema.sql
-supabase/migrations.sql
-supabase/migrations_002_security.sql
-supabase/migrations_003_release.sql
-supabase/migrations_004_setup.sql
-supabase/migrations_005_complexity_avatar.sql
-supabase/migrations_006_release_cycle.sql
-supabase/migrations_007_releases_picklist.sql
+supabase/schema_combined.sql
 ```
 
-All are idempotent. After running, in Supabase → **Authentication → URL Configuration** add `http://localhost:5173` to **Site URL** and **Redirect URLs** so password-reset emails work.
+That's it — one file, fully idempotent, sets up all tables, indexes, RLS policies, functions, triggers, and the view. After running, in Supabase → **Authentication → URL Configuration** add `http://localhost:5173` to **Site URL** and **Redirect URLs** so password-reset emails work.
+
+> **Existing installs:** if you already ran `schema.sql` + individual `migrations_*.sql` files, continue running only new migration files as they appear. Do not re-run `schema_combined.sql` over an existing database.
 
 ## Deploy
 
@@ -223,17 +218,50 @@ public/
   avatars/                 # optional clay-style developer avatars
   site.webmanifest         # PWA manifest
 supabase/
-  schema.sql               # initial DB + RLS + triggers
-  migrations_*.sql         # incremental, idempotent
+  schema_combined.sql      # single fresh-install script (use this)
+  schema.sql               # original base schema (legacy reference)
+  migrations_*.sql         # incremental migrations for existing installs
 docs/
   DEPLOYMENT.md
   SCHEMA.md
   CONTRIBUTING.md
 ```
 
+## Customizing for your org
+
+This tool is built around a specific Salesforce QA workflow. If your org uses different field names, task types, or stage labels, here's exactly what to change:
+
+### 1. Import field mapping — `src/lib/importer.ts`
+Edit the `KEY_ALIASES` map to match your Salesforce column headers. The left side is the internal field name; the right side lists the CSV header aliases your export uses.
+
+```ts
+// Example: if your SF export calls the story name "Story_Name__c" instead of "User_Story_Name__c"
+title: ['story_name__c', 'user_story_name__c', 'title', ...]
+```
+
+### 2. Task types & pipeline — `src/lib/types.ts` + DB
+The 5-task pipeline (`Understand → TC Write → TC Review → SIT Test → UAT Test`) is org-specific. To change it:
+1. Edit `TASK_LABELS` and `TASK_ORDER` in `src/lib/types.ts`
+2. Update the `task_type` enum in `supabase/schema_combined.sql` (or write a new migration)
+3. Update `create_default_tasks()` in the schema to insert your task types
+
+### 3. Stage labels — `src/lib/types.ts`
+Edit `STAGE_LABELS` and `STAGES` to rename or add stages. If you add/remove stages, also update `compute_stage()` in the schema and `computeStage()` in `src/lib/stage.ts`.
+
+### 4. Salesforce status picklist — `src/lib/types.ts`
+Edit `SF_STATUSES` to match your org's `User_Story_Status__c` picklist values. These are display-only (read from import, not editable in the UI).
+
+### 5. Release tracks — `src/lib/types.ts`
+Edit `RELEASE_TRACKS` and `RELEASE_TRACK_LABELS` if your org uses different sub-track names than `Major / QH1 / QH2`. Update the DB check constraint in the schema accordingly.
+
+### 6. Branding — `public/brand/`, `src/components/Logo.tsx`
+Replace `public/brand/logo-stacked.svg` with your own SVG. The brand colors (`#D87749` / `#FBF7F2`) are the only hardcoded hex values — everything else uses CSS variables.
+
+---
+
 ## Status
 
-Personal alpha. Used daily by the author. Stable enough to rely on; not hardened for multi-user / public deployment. PRs that simplify or fix bugs are welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md).
+Personal tool, used daily. Stable enough to rely on for daily QA work; not hardened for multi-user or public-access deployment. PRs that simplify or fix bugs are welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md).
 
 ## License
 

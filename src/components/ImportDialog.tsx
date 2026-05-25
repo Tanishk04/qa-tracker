@@ -10,7 +10,9 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
   const { data: stories = [] } = useStories()
   const [rows, setRows] = useState<ImportedUS[]>([])
   const [pasted, setPasted] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [parsing, setParsing] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const busy = parsing || importing
   const [msg, setMsg] = useState<string | null>(null)
 
   const [defaultRelease, setDefaultRelease] = useState('')
@@ -24,10 +26,10 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return
-    setBusy(true); setMsg(null)
+    setParsing(true); setMsg(null)
     try { const r = await parseFile(f); setRows(r); setMsg(`Parsed ${r.length} rows`) }
     catch (err: any) { setMsg(err.message ?? 'Parse failed') }
-    finally { setBusy(false) }
+    finally { setParsing(false) }
   }
   function onPasteParse() {
     if (!pasted.trim()) return
@@ -35,16 +37,18 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
   }
   async function onConfirm() {
     if (rows.length === 0) return
-    setBusy(true); setMsg(null)
+    setImporting(true); setMsg(null)
     try {
-      const r = await importStories(rows, {
+      await importStories(rows, {
         defaultRelease: overrideRelease ? defaultRelease.trim() || null : undefined,
       })
-      setMsg(`Imported. New: ${r.inserted}, updated: ${r.updated}.`)
       qc.invalidateQueries({ queryKey: ['stories'] })
       qc.invalidateQueries({ queryKey: ['tasks'] })
-    } catch (err: any) { setMsg(err.message ?? 'Import failed') }
-    finally { setBusy(false) }
+      onClose() // auto-close on success — board updates in the background
+    } catch (err: any) {
+      setMsg(err.message ?? 'Import failed')
+      setImporting(false) // keep dialog open so user can see the error
+    }
   }
 
   const detected = useMemo(() => {
@@ -63,6 +67,12 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
   return (
     <div className="modal-back">
       <div className="modal" style={{ width: 760 }}>
+        {importing && (
+          <div className="import-loading">
+            <div className="import-spinner" />
+            <div className="import-loading-label">Importing {rows.length} stories…</div>
+          </div>
+        )}
         <div className="modal-head">
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <Icon name="upload" size={16}/>
@@ -82,8 +92,23 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="label-cap">Upload file</label>
-              <input type="file" accept=".csv,.xlsx,.xls" onChange={onFile}
-                style={{ fontSize: 13, color: 'var(--text-muted)' }}/>
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '7px 12px', cursor: 'pointer',
+                background: 'var(--bg-input)', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)', fontSize: 13, color: 'var(--text-muted)',
+                transition: 'border-color var(--t-fast)',
+              }}
+                onMouseOver={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
+                onMouseOut={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+              >
+                <Icon name="upload" size={14}/>
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {busy ? 'Parsing…' : 'Choose CSV / XLSX / XLS'}
+                </span>
+                <input type="file" accept=".csv,.xlsx,.xls" onChange={onFile}
+                  style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}/>
+              </label>
             </div>
             <div>
               <label className="label-cap">Or paste table</label>
@@ -127,7 +152,9 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
                 )}
               </div>
 
-              <div className="section-label" style={{ marginTop: 16 }}>Preview ({rows.length})</div>
+              <div className="section-label" style={{ marginTop: 16 }}>
+                Preview ({rows.length}{rows.length > 200 ? ` — showing first 200` : ''})
+              </div>
               <div style={{
                 maxHeight: 260, overflow: 'auto',
                 border: '1px solid var(--border)', borderRadius: 8,
@@ -165,7 +192,7 @@ export function ImportDialog({ onClose }: { onClose: () => void }) {
         <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button className="btn btn-outline" onClick={onClose}>Cancel</button>
           <button className="btn btn-primary" disabled={busy || rows.length === 0} onClick={onConfirm}>
-            {busy ? '…' : `Import ${rows.length}`}
+            {importing ? 'Importing…' : parsing ? 'Parsing…' : `Import ${rows.length}`}
           </button>
         </div>
       </div>
